@@ -106,3 +106,160 @@ class TaskManager:
             self.save_tasks()
             return True
         return False
+
+class TaskManagerApp:
+    def __init__(self):
+        self.task_manager = TaskManager()
+    
+    def clear_screen(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+    
+    def get_input(self, prompt):
+        return input(f"{prompt}: ").strip()
+    
+    def display_tasks(self, tasks, title="Tasks"):
+        print(f"\n--- {title} ---")
+        if not tasks:
+            print("No tasks found.")
+            return
+        for task in tasks:
+            print(task)
+    
+    def startup_menu(self):
+        while True:
+            self.clear_screen()
+            print("*** TASK MANAGER ***")
+            print("\n1- Tasks")
+            print("2- Task history")
+            print("3- Exit")
+            
+            choice = self.get_input("Select an option")
+            
+            if choice == "1":
+                self.tasks_menu()
+            elif choice == "2":
+                self.task_history_menu()
+            elif choice == "3":
+                break
+    
+    def tasks_menu(self):
+        while True:
+            self.clear_screen()
+            print("*** TASKS MENU ***")
+            recent_tasks = self.task_manager.get_recent_tasks(3)
+            self.display_tasks(recent_tasks, "Recent Tasks")
+            
+            print("\n1- Add New Task")
+            print("2- Task List")
+            print("3- Task Manager")
+            print("4- Back")
+            
+            choice = self.get_input("Select an option")
+            
+            if choice == "1":
+                self.add_task_menu()
+            elif choice == "2":
+                self.task_list_menu()
+            elif choice == "3":
+                self.task_manager_menu()
+            elif choice == "4":
+                break
+    
+    def add_task_menu(self):
+        self.clear_screen()
+        print("*** ADD NEW TASK ***")
+        title = self.get_input("Task title")
+        if not title:
+            return
+        due_date = self.get_input("Due date (YYYY-MM-DD) or skip")
+        due_date = due_date if due_date else None
+        self.task_manager.add_task(title, due_date)
+    
+    def task_list_menu(self):
+        current_page = 0
+        while True:
+            self.clear_screen()
+            print("*** TASK LIST ***")
+            pending_tasks = self.task_manager.get_pending_tasks()
+            start_idx = current_page * 5
+            end_idx = start_idx + 5
+            page_tasks = pending_tasks[start_idx:end_idx]
+            self.display_tasks(page_tasks, f"Page {current_page + 1}")
+            print(f"\nShowing {start_idx + 1}-{min(end_idx, len(pending_tasks))} of {len(pending_tasks)}")
+            
+            print("\n1- Next 5")
+            print("2- Previous 5")
+            print("3- Show All")
+            print("4- Back")
+            
+            choice = self.get_input("Select an option")
+            
+            if choice == "1" and end_idx < len(pending_tasks):
+                current_page += 1
+            elif choice == "2" and current_page > 0:
+                current_page -= 1
+            elif choice == "3":
+                self.clear_screen()
+                self.display_tasks(pending_tasks, "All Tasks")
+                input()
+            elif choice == "4":
+                break
+    
+    def task_manager_menu(self):
+        while True:
+            self.clear_screen()
+            print("*** TASK MANAGER ***")
+            pending_tasks = self.task_manager.get_pending_tasks()
+            self.display_tasks(pending_tasks, "Pending Tasks")
+            
+            print("\n1- Tick task")
+            print("2- Cross task")
+            print("3- Edit task")
+            print("4- Remove task")
+            print("5- Back")
+            
+            choice = self.get_input("Select an option")
+            
+            if choice == "1":
+                task_id = int(self.get_input("Task ID"))
+                self.task_manager.update_task_status(task_id, "done")
+            elif choice == "2":
+                task_id = int(self.get_input("Task ID"))
+                self.task_manager.update_task_status(task_id, "failed")
+            elif choice == "3":
+                self.edit_task_menu()
+            elif choice == "4":
+                task_id = int(self.get_input("Task ID"))
+                self.task_manager.remove_task(task_id)
+            elif choice == "5":
+                break
+    
+    def edit_task_menu(self):
+        task_id = int(self.get_input("Task ID"))
+        task = self.task_manager.get_task_by_id(task_id)
+        if not task:
+            return
+        print(f"Current: {task}")
+        new_title = self.get_input("New title") or task.title
+        new_due_date = self.get_input("New due date") or task.due_date
+        self.task_manager.edit_task(task_id, new_title, new_due_date)
+    
+    def task_history_menu(self):
+        self.clear_screen()
+        print("*** TASK HISTORY ***")
+        completed_tasks = self.task_manager.get_task_history()
+        self.display_tasks(completed_tasks, "History")
+        input()
+    
+    def run(self):
+        self.startup_menu()
+
+
+def main():
+    """Main function"""
+    app = TaskManagerApp()
+    app.run()
+
+
+if __name__ == "__main__":
+    main()
